@@ -27,7 +27,15 @@ public class Requests {
     }
 
     public List<JsonObject> hiddenGem() {
-        throw new UnsupportedOperationException("Not implemented, yet");
+        var result = ctx.query("""
+                        SELECT m.title
+                        FROM `mflix-sample`._default.movies m
+                        WHERE m.tomatoes.critic.rating == 10
+                        AND m.tomatoes.viewer.rating IS NOT VALUED;
+                        throw new UnsupportedOperationException("Not implemented, yet");
+                        """
+        );
+        return result.rowsAs(JsonObject.class);
     }
 
     public List<JsonObject> topReviewers() {
