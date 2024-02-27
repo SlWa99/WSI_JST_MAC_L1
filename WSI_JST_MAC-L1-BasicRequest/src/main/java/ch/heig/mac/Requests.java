@@ -49,36 +49,50 @@ public class Requests {
     }
 
     public List<String> greatReviewers() {
-        throw new UnsupportedOperationException("Not implemented, yet");
+        var result = ctx.query("""
+                        SELECT RAW c.email
+                        FROM `mflix-sample`._default.comments c
+                        GROUP BY c.email
+                        HAVING COUNT(c.email) > 300;
+                        """
+        );
+        return result.rowsAs(String.class);
     }
 
     public List<JsonObject> bestMoviesOfActor(String actor) {
-        throw new UnsupportedOperationException("Not implemented, yet");
+    throw new UnsupportedOperationException("Not implemented, yet");
     }
 
     public List<JsonObject> plentifulDirectors() {
-        throw new UnsupportedOperationException("Not implemented, yet");
+        var result = ctx.query("""
+                        SELECT m.directors[0] AS director_name, COUNT(m.title) AS count_film
+                        FROM `mflix-sample`._default.movies m
+                        GROUP BY m.directors
+                        HAVING COUNT(m.directors) > 30;
+                        """
+        );
+        return result.rowsAs(JsonObject.class);
     }
 
     public List<JsonObject> confusingMovies() {
-        throw new UnsupportedOperationException("Not implemented, yet");
+    throw new UnsupportedOperationException("Not implemented, yet");
     }
 
     public List<JsonObject> commentsOfDirector1(String director) {
-        throw new UnsupportedOperationException("Not implemented, yet");
+    throw new UnsupportedOperationException("Not implemented, yet");
     }
 
     public List<JsonObject> commentsOfDirector2(String director) {
-        throw new UnsupportedOperationException("Not implemented, yet");
+    throw new UnsupportedOperationException("Not implemented, yet");
     }
 
     // Returns the number of documents updated.
     public long removeEarlyProjection(String movieId) {
-        throw new UnsupportedOperationException("Not implemented, yet");
+    throw new UnsupportedOperationException("Not implemented, yet");
     }
 
     public List<JsonObject> nightMovies() {
-        throw new UnsupportedOperationException("Not implemented, yet");
+    throw new UnsupportedOperationException("Not implemented, yet");
     }
 
 
