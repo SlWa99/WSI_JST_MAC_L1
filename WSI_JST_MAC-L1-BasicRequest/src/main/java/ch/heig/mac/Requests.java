@@ -43,36 +43,43 @@ public class Requests {
     }
 
     public List<String> greatReviewers() {
-        throw new UnsupportedOperationException("Not implemented, yet");
+        var result = ctx.query("""
+                        SELECT RAW c.email
+                        FROM `mflix-sample`._default.comments c
+                        GROUP BY c.email
+                        HAVING COUNT(c.email) > 300;
+                        """
+        );
+        return result.rowsAs(String.class);
     }
 
     public List<JsonObject> bestMoviesOfActor(String actor) {
-        throw new UnsupportedOperationException("Not implemented, yet");
+    throw new UnsupportedOperationException("Not implemented, yet");
     }
 
     public List<JsonObject> plentifulDirectors() {
-        throw new UnsupportedOperationException("Not implemented, yet");
+    throw new UnsupportedOperationException("Not implemented, yet");
     }
 
     public List<JsonObject> confusingMovies() {
-        throw new UnsupportedOperationException("Not implemented, yet");
+    throw new UnsupportedOperationException("Not implemented, yet");
     }
 
     public List<JsonObject> commentsOfDirector1(String director) {
-        throw new UnsupportedOperationException("Not implemented, yet");
+    throw new UnsupportedOperationException("Not implemented, yet");
     }
 
     public List<JsonObject> commentsOfDirector2(String director) {
-        throw new UnsupportedOperationException("Not implemented, yet");
+    throw new UnsupportedOperationException("Not implemented, yet");
     }
 
     // Returns the number of documents updated.
     public long removeEarlyProjection(String movieId) {
-        throw new UnsupportedOperationException("Not implemented, yet");
+    throw new UnsupportedOperationException("Not implemented, yet");
     }
 
     public List<JsonObject> nightMovies() {
-        throw new UnsupportedOperationException("Not implemented, yet");
+    throw new UnsupportedOperationException("Not implemented, yet");
     }
 
 
