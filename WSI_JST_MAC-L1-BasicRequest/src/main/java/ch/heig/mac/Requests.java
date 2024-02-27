@@ -23,7 +23,13 @@ public class Requests {
     }
 
     public List<JsonObject> inconsistentRating() {
-        throw new UnsupportedOperationException("Not implemented, yet");
+        var result = ctx.query("""
+                SELECT Distinct m.imdb.id, m.tomatoes.viewer.rating AS tomatoesRating, m.imdb.rating AS imdbRating
+                FROM `mflix-sample`._default.movies AS m
+                WHERE m.tomatoes.viewer.rating != 0 AND abs(m.imdb.rating - m.tomatoes.viewer.rating) > 7;
+                """
+        );
+        return result.rowsAs(JsonObject.class);
     }
 
     public List<JsonObject> hiddenGem() {
