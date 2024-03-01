@@ -26,7 +26,7 @@ public class Requests {
 
     public List<JsonObject> inconsistentRating() {
         var result = ctx.query("""
-                SELECT Distinct m.imdb.id AS imdb_id, m.tomatoes.viewer.rating AS tomatoes_rating, m.imdb.rating AS imdb_rating
+                SELECT m.imdb.id AS imdb_id, m.tomatoes.viewer.rating AS tomatoes_rating, m.imdb.rating AS imdb_rating
                 FROM `mflix-sample`._default.movies AS m
                 WHERE m.tomatoes.viewer.rating != 0 AND abs(m.imdb.rating - m.tomatoes.viewer.rating) > 7;
                 """
@@ -78,10 +78,11 @@ public class Requests {
 
     public List<JsonObject> plentifulDirectors() {
         var result = ctx.query("""
-                SELECT m.directors[0] AS director_name, COUNT(m.title) AS count_film
-                FROM `mflix-sample`._default.movies m
-                GROUP BY m.directors
-                HAVING COUNT(m.directors) > 30;
+                SELECT director_name, COUNT(m._id) count_film
+                FROM `mflix-sample`.`_default`.`movies` m
+                UNNEST directors AS director_name
+                GROUP BY director_name
+                HAVING COUNT(m._id) > 30;
                 """
         );
         return result.rowsAs(JsonObject.class);
@@ -106,19 +107,19 @@ public class Requests {
                 "FROM `mflix-sample`._default.movies m " +
                 "JOIN `mflix-sample`._default.comments c ON c.movie_id = m._id " +
                 "WHERE ANY d IN m.directors SATISFIES d = \"" + director + "\" END;"
+
         );
 
         return result.rowsAs(JsonObject.class);
     }
 
     public List<JsonObject> commentsOfDirector2(String director) {
-        var result = ctx.query(
-                "SELECT DISTINCT c.movie_id, c.text " +
-                "FROM `mflix-sample`._default.comments c " +
-                "WHERE c.movie_id IN ( " +
-                    "SELECT RAW _id " +
-                    "FROM `mflix-sample`._default.movies " +
-                    "WHERE ANY d IN directors SATISFIES d = \"" + director + "\" END);"
+        var result = ctx.query("SELECT c.movie_id, c.text " +
+                        "FROM `mflix-sample`._default.comments c " +
+                        "WHERE c.movie_id IN ( " +
+                        "SELECT RAW _id " +
+                        "FROM `mflix-sample`._default.movies " +
+                        "WHERE ANY d IN directors SATISFIES d = \"" + director + "\" END);"
         );
 
         return result.rowsAs(JsonObject.class);
@@ -127,29 +128,29 @@ public class Requests {
     // Returns the number of documents updated.
     public long removeEarlyProjection(String movieId) {
         var result = ctx.query("UPDATE `mflix-sample`._default.theaters\n" +
-                "SET schedule = ARRAY s FOR s IN schedule\n" +
-                "WHEN s.moveId != " + movieId + " OR s.hourBegin >= \"18:00:00\" END\n" +
-                "WHERE "+ movieId + " WITHIN schedule;",
-                QueryOptions.queryOptions()
-                            .parameters(JsonObject.create())
-                            .metrics(true)
+                        "SET schedule = ARRAY s FOR s IN schedule\n" +
+                        "WHEN s.moveId != \"" + movieId + "\" OR s.hourBegin >= \"18:00:00\" END\n" +
+                        "WHERE \"" + movieId + "\" WITHIN schedule;",
+                        QueryOptions.queryOptions()
+                        .parameters(JsonObject.create())
+                        .metrics(true)
         );
         return result.metaData().metrics().isPresent() ?
                 result.metaData().metrics().get().mutationCount() : 0;
     }
 
+
     public List<JsonObject> nightMovies() {
         var result = ctx.query("""
-                SELECT m._id AS movie_id, m.title
-                FROM `mflix-sample`._default.movies m
-                WHERE m._id NOT IN (
-                    SELECT DISTINCT RAW schedule.movieId
-                    FROM `mflix-sample`._default.theaters
-                    UNNEST schedule
-                    WHERE schedule.hourBegin >= '18:00:00'
-                );
+                SELECT _id movie_id, title
+                FROM `mflix-sample`.`_default`.`movies`
+                WHERE _id IN (SELECT RAW sched.movieId
+                              FROM `mflix-sample`.`_default`.`theaters`
+                              UNNEST schedule AS sched
+                              GROUP BY sched.movieId
+                              HAVING MIN(sched.hourBegin) >= "18:00:00");
                 """
-          );
-          return result.rowsAs(JsonObject.class);
+        );
+        return result.rowsAs(JsonObject.class);
     }
 }
