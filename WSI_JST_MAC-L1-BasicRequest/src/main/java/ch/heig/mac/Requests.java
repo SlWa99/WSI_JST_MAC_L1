@@ -26,7 +26,7 @@ public class Requests {
 
     public List<JsonObject> inconsistentRating() {
         var result = ctx.query("""
-                SELECT Distinct m.imdb.id, m.tomatoes.viewer.rating AS tomatoesRating, m.imdb.rating AS imdbRating
+                SELECT Distinct m.imdb.id AS imdb_id, m.tomatoes.viewer.rating AS tomatoes_rating, m.imdb.rating AS imdb_rating
                 FROM `mflix-sample`._default.movies AS m
                 WHERE m.tomatoes.viewer.rating != 0 AND abs(m.imdb.rating - m.tomatoes.viewer.rating) > 7;
                 """
@@ -47,11 +47,11 @@ public class Requests {
 
     public List<JsonObject> topReviewers() {
         var result = ctx.query("""
-                SELECT c.email, count(c._id) AS nbCommentaire
+                SELECT c.email, count(c._id) AS cnt
                 FROM `mflix-sample`._default.comments AS c
                 GROUP BY c.email
-                ORDER BY nbCommentaire DESC
-                LIMIT 10
+                ORDER BY cnt DESC
+                LIMIT 10;
                 """
         );
         return result.rowsAs(JsonObject.class);
@@ -69,10 +69,9 @@ public class Requests {
     }
 
     public List<JsonObject> bestMoviesOfActor(String actor) {
-        var result = ctx.query("Select Distinct m.imdb.id, m.imdb.rating, m.`cast`\n" +
-                "From `mflix-sample`._default.movies AS m\n" +
-                "where is_number(m.imdb.rating) AND m.imdb.rating > 8 AND " + actor +
-                " in m.`cast`"
+        var result = ctx.query("Select Distinct m.imdb.id AS imdb_id, m.imdb.rating, m.`cast` " +
+                "From `mflix-sample`._default.movies AS m " +
+                "where is_number(m.imdb.rating) AND m.imdb.rating > 8 AND \"" + actor + "\" in m.`cast`;"
         );
         return result.rowsAs(JsonObject.class);
     }
@@ -90,20 +89,39 @@ public class Requests {
 
     public List<JsonObject> confusingMovies() {
         var result = ctx.query("""
-                Select m._id , m.title
+                Select m._id AS movie_id, m.title
                 From `mflix-sample`._default.movies AS m
-                where array_count(directors) > 20
+                where array_count(directors) > 20;
                 """
         );
         return result.rowsAs(JsonObject.class);
     }
 
     public List<JsonObject> commentsOfDirector1(String director) {
-        throw new UnsupportedOperationException("Not implemented, yet");
+        // il a fallut faire : CREATE INDEX movie_id ON `mflix-sample`._default.comments(movie_id);
+        // pour créer un index sur la table comments sur movie_id
+
+        var result = ctx.query(
+                "SELECT c.movie_id, c.text " +
+                "FROM `mflix-sample`._default.movies m " +
+                "JOIN `mflix-sample`._default.comments c ON c.movie_id = m._id " +
+                "WHERE ANY d IN m.directors SATISFIES d = \"" + director + "\" END;"
+        );
+
+        return result.rowsAs(JsonObject.class);
     }
 
     public List<JsonObject> commentsOfDirector2(String director) {
-        throw new UnsupportedOperationException("Not implemented, yet");
+        var result = ctx.query(
+                "SELECT DISTINCT c.movie_id, c.text " +
+                "FROM `mflix-sample`._default.comments c " +
+                "WHERE c.movie_id IN ( " +
+                    "SELECT RAW _id " +
+                    "FROM `mflix-sample`._default.movies " +
+                    "WHERE ANY d IN directors SATISFIES d = \"" + director + "\" END);"
+        );
+
+        return result.rowsAs(JsonObject.class);
     }
 
     // Returns the number of documents updated.
@@ -121,8 +139,17 @@ public class Requests {
     }
 
     public List<JsonObject> nightMovies() {
-        throw new UnsupportedOperationException("Not implemented, yet");
+        var result = ctx.query("""
+                SELECT m._id AS movie_id, m.title
+                FROM `mflix-sample`._default.movies m
+                WHERE m._id NOT IN (
+                    SELECT DISTINCT RAW schedule.movieId
+                    FROM `mflix-sample`._default.theaters
+                    UNNEST schedule
+                    WHERE schedule.hourBegin >= '18:00:00'
+                );
+                """
+          );
+          return result.rowsAs(JsonObject.class);
     }
-
-
 }
