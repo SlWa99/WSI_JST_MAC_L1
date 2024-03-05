@@ -99,7 +99,7 @@ public class Requests {
     }
 
     public List<JsonObject> commentsOfDirector1(String director) {
-        // il a fallut faire : CREATE INDEX movie_id ON `mflix-sample`._default.comments(movie_id);
+        // il a fallu faire : CREATE INDEX movie_id ON `mflix-sample`._default.comments(movie_id);
         // pour créer un index sur la table comments sur movie_id
 
         var result = ctx.query(
