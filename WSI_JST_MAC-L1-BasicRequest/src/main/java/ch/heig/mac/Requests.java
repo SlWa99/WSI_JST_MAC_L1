@@ -6,7 +6,6 @@ import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.json.JsonObject;
 import com.couchbase.client.java.query.QueryOptions;
 
-
 public class Requests {
     private final Cluster ctx;
 
@@ -99,7 +98,7 @@ public class Requests {
     }
 
     public List<JsonObject> commentsOfDirector1(String director) {
-        // il a fallut faire : CREATE INDEX movie_id ON `mflix-sample`._default.comments(movie_id);
+        // il a fallu faire : CREATE INDEX movie_id ON `mflix-sample`._default.comments(movie_id);
         // pour créer un index sur la table comments sur movie_id
 
         var result = ctx.query(
@@ -107,9 +106,7 @@ public class Requests {
                 "FROM `mflix-sample`._default.movies m " +
                 "JOIN `mflix-sample`._default.comments c ON c.movie_id = m._id " +
                 "WHERE ANY d IN m.directors SATISFIES d = \"" + director + "\" END;"
-
         );
-
         return result.rowsAs(JsonObject.class);
     }
 
@@ -121,7 +118,6 @@ public class Requests {
                         "FROM `mflix-sample`._default.movies " +
                         "WHERE ANY d IN directors SATISFIES d = \"" + director + "\" END);"
         );
-
         return result.rowsAs(JsonObject.class);
     }
 
@@ -129,8 +125,9 @@ public class Requests {
     public long removeEarlyProjection(String movieId) {
         var result = ctx.query("UPDATE `mflix-sample`._default.theaters\n" +
                         "SET schedule = ARRAY s FOR s IN schedule\n" +
-                        "WHEN s.moveId != \"" + movieId + "\" OR s.hourBegin >= \"18:00:00\" END\n" +
-                        "WHERE \"" + movieId + "\" WITHIN schedule;",
+                        "WHEN s.moveId <> \"" + movieId + "\" END\n" +
+                        "WHERE ANY s IN schedule SATISFIES\n" +
+                        "s.movieId = \"" + movieId + "\" AND s.hourBegin < '18:00:00' END",
                         QueryOptions.queryOptions()
                         .parameters(JsonObject.create())
                         .metrics(true)
@@ -148,7 +145,7 @@ public class Requests {
                               FROM `mflix-sample`.`_default`.`theaters`
                               UNNEST schedule AS sched
                               GROUP BY sched.movieId
-                              HAVING MIN(sched.hourBegin) >= "18:00:00");
+                              HAVING MIN(sched.hourBegin) >= '18:00:00');
                 """
         );
         return result.rowsAs(JsonObject.class);
